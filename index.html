@@ -1219,7 +1219,7 @@ async function renderDashTime(){
   const{from,to}=getDashPeriod();
   const{data,error}=await sb.from('screen_time').select('*').gte('date',from).lte('date',to).order('date',{ascending:false});
   if(error){document.getElementById('dashContent').innerHTML='<div style="color:var(--muted)">Ошибка загрузки экранного времени</div>';return;}
-  const stRows=data||[];const byUser={};
+  const stRows=(data||[]).filter(r=>r.name!=='Федоров С.');const byUser={};
   stRows.forEach(r=>{if(!byUser[r.name])byUser[r.name]={total:0,days:{}};byUser[r.name].total+=r.seconds||0;byUser[r.name].days[r.date]=(byUser[r.name].days[r.date]||0)+(r.seconds||0);});
   const users=Object.keys(byUser).sort((a,b)=>byUser[b].total-byUser[a].total);
   const dates=[];const fromD=new Date(from);const toD=new Date(to);
