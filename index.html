@@ -286,6 +286,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
   <div class="info-wrap hidden" id="infoWrap"></div>
   <div class="deactiv-wrap hidden" id="deactivWrap"></div>
   <div class="info-wrap hidden" id="vacationWrap"></div>
+  <div class="info-wrap hidden" id="mentorWrap"></div>
 </div>
 
 <!-- Row Modal -->
@@ -447,6 +448,7 @@ let dashTab='main',dashPeriod='week',dashFrom='',dashTo='';
 let infoMode=false;
 let deactivMode=false;
 let vacationMode=false;
+let mentorMode=false;
 let deactivEditId=null;
 let deactivRows=[];
 let deactivFilter={fio:'',city:'',reason:''};
@@ -1130,13 +1132,15 @@ function renderTabs(){
   const recs=getRecs();
   let tabs=recs.map((r,i)=>`<div class="tab${!dashMode&&!infoMode&&!deactivMode&&i===tab?' active':''}" data-i="${i}">${r} <span class="pdot" data-rec="${r}" style="font-size:11px">🤍</span></div>`).join('');
   if(isAdmin)tabs+=`<div class="tab${dashMode?' active':''}" data-dash="1">📊 Дашборд</div>`;
+  tabs+=`<div class="tab${mentorMode?' active':''}" data-mentor="1">🤝 Наставники</div>`;
   tabs+=`<div class="tab${vacationMode?' active':''}" data-vacation="1">🌴 Отпуска</div>`;
   tabs+=`<div class="tab${infoMode?' active':''}" data-info="1">📚 Инфо</div>`;
   document.getElementById('tabsWrap').innerHTML=tabs;
-  document.querySelectorAll('.tab[data-i]').forEach(t=>{t.onclick=()=>{dashMode=false;infoMode=false;deactivMode=false;vacationMode=false;tab=+t.dataset.i;F={from:td(),to:td(),okrug:'',da:'',status:'',city:'',fio:'',tel:''};clearSelection();loadData()}});
-  const dt=document.querySelector('.tab[data-dash]');if(dt)dt.onclick=()=>{dashMode=true;infoMode=false;deactivMode=false;vacationMode=false;clearSelection();render();};
-  const it=document.querySelector('.tab[data-info]');if(it)it.onclick=()=>{infoMode=true;dashMode=false;deactivMode=false;vacationMode=false;clearSelection();render();};
-  const vt=document.querySelector('.tab[data-vacation]');if(vt)vt.onclick=()=>{vacationMode=true;infoMode=false;dashMode=false;deactivMode=false;clearSelection();render();};
+  document.querySelectorAll('.tab[data-i]').forEach(t=>{t.onclick=()=>{dashMode=false;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;tab=+t.dataset.i;F={from:td(),to:td(),okrug:'',da:'',status:'',city:'',fio:'',tel:''};clearSelection();loadData()}});
+  const dt=document.querySelector('.tab[data-dash]');if(dt)dt.onclick=()=>{dashMode=true;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;clearSelection();render();};
+  const it=document.querySelector('.tab[data-info]');if(it)it.onclick=()=>{infoMode=true;dashMode=false;deactivMode=false;vacationMode=false;mentorMode=false;clearSelection();render();};
+  const mt=document.querySelector('.tab[data-mentor]');if(mt)mt.onclick=()=>{mentorMode=true;vacationMode=false;infoMode=false;dashMode=false;deactivMode=false;clearSelection();render();};
+  const vt=document.querySelector('.tab[data-vacation]');if(vt)vt.onclick=()=>{vacationMode=true;infoMode=false;dashMode=false;deactivMode=false;mentorMode=false;clearSelection();render();};
   renderPresence();
 }
 
@@ -1145,11 +1149,18 @@ function render(){
   const dw=document.getElementById('dashWrap');const tw=document.querySelector('.table-wrap');const cw=document.getElementById('cardsWrap');
   const fb=document.getElementById('filtersBar');const sb2=document.getElementById('statsBar');const bb=document.getElementById('bulkBar');
   const iw=document.getElementById('infoWrap');const dacw=document.getElementById('deactivWrap');
-  if(vacationMode){
+  if(mentorMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
     iw.classList.add('hidden');dacw.classList.add('hidden');
-    document.getElementById('vacationWrap').classList.remove('hidden');renderVacation();
+    document.getElementById('vacationWrap').classList.add('hidden');
+    document.getElementById('mentorWrap').classList.remove('hidden');renderMentors();
+  } else if(vacationMode){
+    fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
+    if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
+    iw.classList.add('hidden');dacw.classList.add('hidden');
+    document.getElementById('vacationWrap').classList.remove('hidden');
+    document.getElementById('mentorWrap').classList.add('hidden');renderVacation();
   } else if(deactivMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
@@ -1157,7 +1168,7 @@ function render(){
   } else if(infoMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
-    iw.classList.remove('hidden');dacw.classList.add('hidden');document.getElementById('vacationWrap').classList.add('hidden');renderInfo();
+    iw.classList.remove('hidden');dacw.classList.add('hidden');document.getElementById('vacationWrap').classList.add('hidden');document.getElementById('mentorWrap').classList.add('hidden');renderInfo();
   } else if(dashMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='flex';
@@ -1728,6 +1739,98 @@ function cycleTheme(){
 // Применяем сохранённую тему при загрузке
 applyTheme(currentTheme);
 // ===== END THEMES =====
+
+// ===== MENTORS =====
+const MENTORS_DATA = {
+  msk: {
+    title: 'Наставники МСК',
+    emoji: '🏙️',
+    color: '#1976d2',
+    bg: '#e3f2fd',
+    rows: [
+      {okrug:'САО',    name:'Мамедов Сарван',       tg:'',              phone:'+79253872439'},
+      {okrug:'СВАО',   name:'Подосиновиков Максим',  tg:'@maxmikser',    phone:'+79161870545'},
+      {okrug:'СЗАО',   name:'Цой Влас',              tg:'@Vlass126',     phone:'+79160341413'},
+      {okrug:'ВАО',    name:'Морозов Максим',         tg:'@maksim1987morozov', phone:'+79774291916'},
+      {okrug:'ЮВАО',   name:'Гаргалык Андрей',        tg:'@ang1014',      phone:'+79263072676'},
+      {okrug:'ЮАО',    name:'Дмитриев Алексей',       tg:'@AlexDjeen',    phone:'+79060498610'},
+      {okrug:'ЮЗАО',   name:'Прохоров Роман',          tg:'@roma_proxorov',phone:'+79660607602'},
+      {okrug:'ЗАО',    name:'Никулин Максим',          tg:'@nwanne99',     phone:'+79969210521'},
+    ]
+  },
+  spb: {
+    title: 'Наставники СПБ',
+    emoji: '🌊',
+    color: '#0288d1',
+    bg: '#e1f5fe',
+    rows: [
+      {okrug:'ЮЗ',     name:'Лабузов Дмитрий',   tg:'', phone:''},
+      {okrug:'ЮВ',     name:'Степанова Ольга',    tg:'', phone:''},
+      {okrug:'Восток', name:'Штоколов Николай',   tg:'', phone:''},
+      {okrug:'СВ',     name:'Пинчук Виктор',      tg:'', phone:''},
+      {okrug:'СЗ',     name:'Шорохов Максим',     tg:'', phone:''},
+    ]
+  }
+};
+
+function renderMentors(){
+  const wrap = document.getElementById('mentorWrap');
+
+  const copyTip = (text) => {
+    if(!text) return '';
+    return `onclick="navigator.clipboard.writeText('${text}').then(()=>{const t=document.createElement('div');t.textContent='📋 Скопировано';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1c1c1e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:9999';document.body.appendChild(t);setTimeout(()=>t.remove(),2000)})"`;
+  };
+
+  let html = `<div style="max-width:900px;margin:0 auto;padding-bottom:32px">
+    <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px">🤝 Наставники</div>`;
+
+  Object.values(MENTORS_DATA).forEach(group => {
+    html += `
+    <div style="background:var(--surface);border-radius:16px;box-shadow:var(--sh);overflow:hidden;margin-bottom:20px">
+      <div style="background:${group.color};padding:14px 20px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${group.emoji}</span>
+        <span style="font-size:15px;font-weight:700;color:#fff">${group.title}</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.7);margin-left:4px">${group.rows.length} чел.</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg)">
+              <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px;width:80px">Округ</th>
+              <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px">ФИО</th>
+              <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px">Telegram</th>
+              <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px">Телефон</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${group.rows.map((r,i) => `
+            <tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+              <td style="padding:12px 16px;vertical-align:middle">
+                <span style="background:${group.color};color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">${r.okrug}</span>
+              </td>
+              <td style="padding:12px 16px;font-weight:600;color:var(--text);vertical-align:middle">${r.name}</td>
+              <td style="padding:12px 16px;vertical-align:middle">
+                ${r.tg ? `<span style="color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:5px;background:var(--bg);padding:4px 10px;border-radius:20px;font-size:12px" ${copyTip(r.tg)} title="Нажми — скопировать">
+                  <span style="color:#29b6f6">✈️</span>${r.tg}
+                </span>` : '<span style="color:var(--muted);font-size:12px">—</span>'}
+              </td>
+              <td style="padding:12px 16px;vertical-align:middle">
+                ${r.phone ? `<span style="color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:5px;background:var(--bg);padding:4px 10px;border-radius:20px;font-size:12px" ${copyTip(r.phone)} title="Нажми — скопировать">
+                  📞 ${r.phone}
+                </span>` : '<span style="color:var(--muted);font-size:12px">—</span>'}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  html += `<div style="font-size:11px;color:var(--muted);text-align:center;padding:4px">Нажмите на Telegram или телефон чтобы скопировать</div></div>`;
+  wrap.innerHTML = html;
+}
+window.renderMentors = renderMentors;
+// ===== END MENTORS =====
 </script>
 <!-- Paste Modal -->
 <div class="modal-bg" id="pasteBg">
