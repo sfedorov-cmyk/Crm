@@ -67,7 +67,7 @@ body,html{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);colo
 .tab.active{color:var(--accent-dark);border-bottom-color:var(--accent)}
 .tab.tab-deactiv{color:#ff3b30}
 .tab.tab-deactiv.active{color:#c0392b;border-bottom-color:#ff3b30}
-.pdot{display:none}
+.pdot{font-size:11px;display:inline-block}
 .filters{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
 .frow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .flabel{font-size:11px;font-weight:500;color:var(--muted);white-space:nowrap}
@@ -1086,12 +1086,13 @@ function initUser(user){
   renderAvatar();if(!isAdmin){tab=ALL_R.indexOf(myRec);if(tab<0)tab=0}
   loadCalNotes();
   sb.from('screen_time').select('seconds').eq('email',user.email).eq('date',td()).single().then(({data})=>{if(data)screenSeconds=data.seconds||0;});
-  loadData();updatePresence();setInterval(updatePresence,20000);
+  loadData();updatePresence();setInterval(updatePresence,10000);setTimeout(renderPresence,1000);
   sb.channel('c1').on('postgres_changes',{event:'*',schema:'public',table:'candidates'},()=>loadData()).subscribe();
   sb.channel('c2').on('postgres_changes',{event:'*',schema:'public',table:'user_presence'},()=>renderPresence()).subscribe();
   sb.channel('c3').on('postgres_changes',{event:'*',schema:'public',table:'info_data'},()=>{if(infoMode)renderInfo();}).subscribe();
   sb.channel('c4').on('postgres_changes',{event:'*',schema:'public',table:'deactivated'},()=>{if(deactivMode)renderDeactiv();}).subscribe();
   setInterval(syncQueue,30000);
+setInterval(renderPresence,10000);
 }
 sb.auth.getSession().then(({data})=>{if(data?.session)initUser(data.session.user)});
 
@@ -1110,7 +1111,7 @@ async function updatePresence(){
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updatePresence();});
 window.addEventListener('focus',()=>updatePresence());
 
-async function renderPresence(){const{data}=await sb.from('user_presence').select('*');if(!data)return;const now=new Date();document.querySelectorAll('.pdot').forEach(dot=>{const u=data.find(x=>x.name===dot.dataset.rec);if(!u)return;const diff=Math.floor((now-new Date(u.last_seen))/1000);dot.textContent=diff<120?'🩷':'🤍';dot.title=diff<120?'Онлайн':fmtAgo(diff);});}
+async function renderPresence(){const{data}=await sb.from('user_presence').select('*');if(!data)return;const now=new Date();document.querySelectorAll('.pdot').forEach(dot=>{const u=data.find(x=>x.name===dot.dataset.rec);if(!u)return;const diff=Math.floor((now-new Date(u.last_seen))/1000);dot.textContent=diff<120?'🩷':'🤍';dot.style.color=diff<120?'#34c759':'#ccc';dot.title=diff<120?'Онлайн ('+u.name+')':fmtAgo(diff);});}
 function fmtAgo(s){if(s<60)return'только что';if(s<3600)return Math.floor(s/60)+' мин назад';return Math.floor(s/3600)+' ч назад'}
 
 async function loadData(){
@@ -1127,7 +1128,7 @@ let dashMode=false;
 
 function renderTabs(){
   const recs=getRecs();
-  let tabs=recs.map((r,i)=>`<div class="tab${!dashMode&&!infoMode&&!deactivMode&&i===tab?' active':''}" data-i="${i}">  ${r} <span class="pdot" data-rec="${r}" style="display:inline;font-size:12px">🤍</span></div>`).join('');
+  let tabs=recs.map((r,i)=>`<div class="tab${!dashMode&&!infoMode&&!deactivMode&&i===tab?' active':''}" data-i="${i}">${r} <span class="pdot" data-rec="${r}" style="font-size:11px">🤍</span></div>`).join('');
   if(isAdmin)tabs+=`<div class="tab${dashMode?' active':''}" data-dash="1">📊 Дашборд</div>`;
   tabs+=`<div class="tab${vacationMode?' active':''}" data-vacation="1">🌴 Отпуска</div>`;
   tabs+=`<div class="tab${infoMode?' active':''}" data-info="1">📚 Инфо</div>`;
