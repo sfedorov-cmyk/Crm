@@ -1059,11 +1059,18 @@ document.getElementById('bulkDelBtn').onclick=async()=>{
   const ids=[...selected];for(const id of ids){await sb.from('candidates').delete().eq('id',id);}
   clearSelection();await loadData();
 };
-document.getElementById('bulkMoveBtn').onclick=()=>{if(!selected.size)return;document.getElementById('moveDate').value=td();document.getElementById('moveBg').classList.add('open');};
+document.getElementById('bulkMoveBtn').onclick=()=>{
+  if(!selected.size)return;
+  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+  const ty=tomorrow.getFullYear()+'-'+String(tomorrow.getMonth()+1).padStart(2,'0')+'-'+String(tomorrow.getDate()).padStart(2,'0');
+  document.getElementById('moveDate').value=ty;
+  document.getElementById('moveBg').classList.add('open');
+};
 document.getElementById('moveCancelBtn').onclick=()=>document.getElementById('moveBg').classList.remove('open');
 document.getElementById('moveBg').onclick=function(e){if(e.target===this)this.classList.remove('open')};
 document.getElementById('moveConfirmBtn').onclick=async function(){
   const newDate=document.getElementById('moveDate').value;if(!newDate){alert('Выберите дату');return}
+  if(newDate===td()){alert('Нельзя переносить на сегодняшний день. Выберите другую дату.');return}
   this.textContent='Переношу...';this.disabled=true;
   const ids=[...selected];for(const id of ids){await sb.from('candidates').update({date:newDate}).eq('id',id);}
   this.textContent='Перенести';this.disabled=false;
@@ -1773,24 +1780,76 @@ const MENTORS_DATA = {
   }
 };
 
+let mentorsData = null;
+
+function loadMentorsData(){
+  try{
+    const saved = localStorage.getItem('hrcrm_mentors');
+    if(saved) mentorsData = JSON.parse(saved);
+    else mentorsData = JSON.parse(JSON.stringify(MENTORS_DATA));
+  }catch(e){ mentorsData = JSON.parse(JSON.stringify(MENTORS_DATA)); }
+}
+
+function saveMentorsData(){
+  localStorage.setItem('hrcrm_mentors', JSON.stringify(mentorsData));
+}
+
+function mentorSaveCell(groupKey, rowIdx, field, value){
+  if(!mentorsData) loadMentorsData();
+  mentorsData[groupKey].rows[rowIdx][field] = value.trim();
+  saveMentorsData();
+}
+window.mentorSaveCell = mentorSaveCell;
+
+function mentorAddRow(groupKey){
+  if(!mentorsData) loadMentorsData();
+  mentorsData[groupKey].rows.push({okrug:'', name:'', tg:'', phone:''});
+  saveMentorsData(); renderMentors();
+  setTimeout(()=>{
+    const cells = document.querySelectorAll('.mentor-cell-name');
+    const last = cells[cells.length-1];
+    if(last){ last.focus(); }
+  }, 100);
+}
+window.mentorAddRow = mentorAddRow;
+
+function mentorDelRow(groupKey, rowIdx){
+  if(!mentorsData) loadMentorsData();
+  if(!confirm('Удалить строку?')) return;
+  mentorsData[groupKey].rows.splice(rowIdx, 1);
+  saveMentorsData(); renderMentors();
+}
+window.mentorDelRow = mentorDelRow;
+
+function copyContact(text){
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const t=document.createElement('div');
+    t.textContent='📋 Скопировано: '+text;
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1c1c1e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:9999';
+    document.body.appendChild(t);setTimeout(()=>t.remove(),2000);
+  });
+}
+window.copyContact = copyContact;
+
 function renderMentors(){
+  loadMentorsData();
   const wrap = document.getElementById('mentorWrap');
 
-  const copyTip = (text) => {
-    if(!text) return '';
-    return `onclick="navigator.clipboard.writeText('${text}').then(()=>{const t=document.createElement('div');t.textContent='📋 Скопировано';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1c1c1e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:9999';document.body.appendChild(t);setTimeout(()=>t.remove(),2000)})"`;
-  };
-
   let html = `<div style="max-width:900px;margin:0 auto;padding-bottom:32px">
-    <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px">🤝 Наставники</div>`;
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:18px;font-weight:700;color:var(--text)">🤝 Наставники</div>
+      <span style="font-size:12px;color:var(--muted);background:var(--bg);padding:4px 12px;border-radius:20px">✏️ Кликните на ячейку для редактирования</span>
+    </div>`;
 
-  Object.values(MENTORS_DATA).forEach(group => {
+  Object.entries(mentorsData).forEach(([groupKey, group]) => {
     html += `
     <div style="background:var(--surface);border-radius:16px;box-shadow:var(--sh);overflow:hidden;margin-bottom:20px">
       <div style="background:${group.color};padding:14px 20px;display:flex;align-items:center;gap:10px">
         <span style="font-size:20px">${group.emoji}</span>
         <span style="font-size:15px;font-weight:700;color:#fff">${group.title}</span>
         <span style="font-size:12px;color:rgba(255,255,255,.7);margin-left:4px">${group.rows.length} чел.</span>
+        <button onclick="mentorAddRow('${groupKey}')" style="margin-left:auto;font-size:12px;padding:4px 12px;border:none;border-radius:20px;background:rgba(255,255,255,.25);color:#fff;cursor:pointer">+ Добавить</button>
       </div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -1800,24 +1859,48 @@ function renderMentors(){
               <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px">ФИО</th>
               <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px">Telegram</th>
               <th style="padding:10px 16px;text-align:left;border-bottom:2px solid ${group.color}33;font-size:11px;font-weight:700;color:${group.color};text-transform:uppercase;letter-spacing:.4px">Телефон</th>
+              <th style="width:36px;border-bottom:2px solid ${group.color}33;background:var(--bg)"></th>
             </tr>
           </thead>
           <tbody>
             ${group.rows.map((r,i) => `
             <tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-              <td style="padding:12px 16px;vertical-align:middle">
-                <span style="background:${group.color};color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">${r.okrug}</span>
+              <td style="padding:0;vertical-align:middle">
+                <div contenteditable="true" onblur="mentorSaveCell('${groupKey}',${i},'okrug',this.textContent)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                  style="padding:12px 16px;outline:none;font-weight:700;cursor:text;min-height:40px;color:${group.color}">
+                  ${r.okrug||''}
+                </div>
               </td>
-              <td style="padding:12px 16px;font-weight:600;color:var(--text);vertical-align:middle">${r.name}</td>
-              <td style="padding:12px 16px;vertical-align:middle">
-                ${r.tg ? `<span style="color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:5px;background:var(--bg);padding:4px 10px;border-radius:20px;font-size:12px" ${copyTip(r.tg)} title="Нажми — скопировать">
-                  <span style="color:#29b6f6">✈️</span>${r.tg}
-                </span>` : '<span style="color:var(--muted);font-size:12px">—</span>'}
+              <td style="padding:0;vertical-align:middle">
+                <div class="mentor-cell-name" contenteditable="true" onblur="mentorSaveCell('${groupKey}',${i},'name',this.textContent)"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                  style="padding:12px 16px;outline:none;font-weight:600;cursor:text;min-height:40px;color:var(--text)">
+                  ${r.name||''}
+                </div>
               </td>
-              <td style="padding:12px 16px;vertical-align:middle">
-                ${r.phone ? `<span style="color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:5px;background:var(--bg);padding:4px 10px;border-radius:20px;font-size:12px" ${copyTip(r.phone)} title="Нажми — скопировать">
-                  📞 ${r.phone}
-                </span>` : '<span style="color:var(--muted);font-size:12px">—</span>'}
+              <td style="padding:0;vertical-align:middle">
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 16px">
+                  <div contenteditable="true" onblur="mentorSaveCell('${groupKey}',${i},'tg',this.textContent)"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                    style="outline:none;cursor:text;color:var(--text);flex:1;min-height:24px;font-size:13px">
+                    ${r.tg||''}
+                  </div>
+                  ${r.tg ? `<button onclick="copyContact('${r.tg}')" style="background:none;border:none;cursor:pointer;font-size:13px;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5" title="Скопировать">📋</button>` : ''}
+                </div>
+              </td>
+              <td style="padding:0;vertical-align:middle">
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 16px">
+                  <div contenteditable="true" onblur="mentorSaveCell('${groupKey}',${i},'phone',this.textContent)"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                    style="outline:none;cursor:text;color:var(--text);flex:1;min-height:24px;font-size:13px">
+                    ${r.phone||''}
+                  </div>
+                  ${r.phone ? `<button onclick="copyContact('${r.phone}')" style="background:none;border:none;cursor:pointer;font-size:13px;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5" title="Скопировать">📋</button>` : ''}
+                </div>
+              </td>
+              <td style="padding:4px;text-align:center;vertical-align:middle">
+                <button onclick="mentorDelRow('${groupKey}',${i})" style="background:none;border:none;cursor:pointer;font-size:12px;color:#fca5a5;opacity:.6" onmouseover="this.style.opacity=1;this.style.color='#ef4444'" onmouseout="this.style.opacity=.6;this.style.color='#fca5a5'" title="Удалить">✕</button>
               </td>
             </tr>`).join('')}
           </tbody>
@@ -1826,8 +1909,14 @@ function renderMentors(){
     </div>`;
   });
 
-  html += `<div style="font-size:11px;color:var(--muted);text-align:center;padding:4px">Нажмите на Telegram или телефон чтобы скопировать</div></div>`;
+  html += `<div style="font-size:11px;color:var(--muted);text-align:center;padding:4px">Изменения сохраняются автоматически</div></div>`;
   wrap.innerHTML = html;
+
+  // Подсветка при фокусе
+  wrap.querySelectorAll('[contenteditable]').forEach(el=>{
+    el.addEventListener('focus',()=>el.style.background='var(--bg)');
+    el.addEventListener('blur',()=>el.style.background='');
+  });
 }
 window.renderMentors = renderMentors;
 // ===== END MENTORS =====
