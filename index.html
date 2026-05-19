@@ -1140,9 +1140,9 @@ async function renderPresence(){
     if(!u)return;
     const lastMs=new Date(u.last_seen).getTime();
     const diff=Math.floor((nowUTC-lastMs)/1000);
-    dot.textContent=diff<120?'🩷':'🤍';
-    dot.style.color=diff<120?'#34c759':'#8e8e93';
-    dot.title=diff<120?'Онлайн ('+u.name+')':fmtAgo(diff);
+    dot.textContent=diff<28800?'🩷':'🤍';
+    dot.style.color=diff<28800?'#34c759':'#8e8e93';
+    dot.title=diff<28800?'Онлайн ('+u.name+')':fmtAgo(diff);
   });
 }
 function fmtAgo(s){if(s<60)return'только что';if(s<3600)return Math.floor(s/60)+' мин назад';return Math.floor(s/3600)+' ч назад'}
