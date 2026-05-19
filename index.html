@@ -949,7 +949,7 @@ window.saveSmzStep=saveSmzStep;
 function td(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')}
 function fd(d){if(!d)return'—';const p=d.split('-');return p[2]+'.'+p[1]+'.'+p[0]}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
-function getRecs(){return isAdmin?ALL_R:[myRec]}
+function getRecs(){return ALL_R}
 function sClass(s){return{думает:'dumaet',недозвон:'nedozvon',отказ:'otkaz',принят:'prinyat',оформление:'oformlenie',стажировка:'stazhirovka',резерв:'rezerv','жду доки':'zhdu','проверка СБ':'sb','передан в логистику':'logistic'}[s]||''}
 function daBadge(v){if(v==='да')return'<span class="chip c-da-yes">Да</span>';if(v==='нет')return'<span class="chip c-da-no">Нет</span>';if(v==='думает')return'<span class="chip c-da-think">Думает</span>';return'<span class="chip c-empty">—</span>'}
 function stBadge(s){const c=sClass(s);return s&&s!=='—'?`<span class="chip c-${c}">${s}</span>`:'—'}
