@@ -1100,7 +1100,7 @@ function initUser(user){
   CU=user;isAdmin=ADMINS.includes(user.email);myRec=EMAP[user.email]||user.email;
   document.getElementById('userName').textContent=myRec;
   document.getElementById('loginWrap').style.display='none';document.getElementById('appWrap').classList.remove('hidden');
-  renderAvatar();if(!isAdmin){tab=ALL_R.indexOf(myRec);if(tab<0)tab=0}
+  renderAvatar();if(!isAdmin){tab=0}
   loadCalNotes();
   sb.from('screen_time').select('seconds').eq('email',user.email).eq('date',td()).single().then(({data})=>{if(data)screenSeconds=data.seconds||0;});
   loadData();updatePresence();setInterval(updatePresence,10000);setTimeout(renderPresence,1000);
