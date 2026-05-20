@@ -287,6 +287,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
   <div class="deactiv-wrap hidden" id="deactivWrap"></div>
   <div class="info-wrap hidden" id="vacationWrap"></div>
   <div class="info-wrap hidden" id="mentorWrap"></div>
+  <div class="info-wrap hidden" id="kpiWrap"></div>
 </div>
 
 <!-- Row Modal -->
@@ -449,6 +450,7 @@ let infoMode=false;
 let deactivMode=false;
 let vacationMode=false;
 let mentorMode=false;
+let kpiMode=false;
 let deactivEditId=null;
 let deactivRows=[];
 let deactivFilter={fio:'',city:'',reason:''};
@@ -1163,15 +1165,17 @@ function renderTabs(){
   const recs=getRecs();
   let tabs=recs.map((r,i)=>`<div class="tab${!dashMode&&!infoMode&&!deactivMode&&i===tab?' active':''}" data-i="${i}">${r} <span class="pdot" data-rec="${r}" style="font-size:11px">🤍</span></div>`).join('');
   if(isAdmin)tabs+=`<div class="tab${dashMode?' active':''}" data-dash="1">📊 Дашборд</div>`;
+  tabs+=`<div class="tab${kpiMode?' active':''}" data-kpi="1">🏆 KPI</div>`;
   tabs+=`<div class="tab${mentorMode?' active':''}" data-mentor="1">🤝 Наставники</div>`;
   tabs+=`<div class="tab${vacationMode?' active':''}" data-vacation="1">🌴 Отпуска</div>`;
   tabs+=`<div class="tab${infoMode?' active':''}" data-info="1">📚 Инфо</div>`;
   document.getElementById('tabsWrap').innerHTML=tabs;
-  document.querySelectorAll('.tab[data-i]').forEach(t=>{t.onclick=()=>{dashMode=false;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;tab=+t.dataset.i;F={from:td(),to:td(),okrug:'',da:'',status:'',city:'',fio:'',tel:''};clearSelection();loadData()}});
+  document.querySelectorAll('.tab[data-i]').forEach(t=>{t.onclick=()=>{dashMode=false;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;kpiMode=false;tab=+t.dataset.i;F={from:td(),to:td(),okrug:'',da:'',status:'',city:'',fio:'',tel:''};clearSelection();loadData()}});
   const dt=document.querySelector('.tab[data-dash]');if(dt)dt.onclick=async()=>{dashMode=true;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;clearSelection();await loadData();render();};
-  const it=document.querySelector('.tab[data-info]');if(it)it.onclick=()=>{infoMode=true;dashMode=false;deactivMode=false;vacationMode=false;mentorMode=false;clearSelection();render();};
-  const mt=document.querySelector('.tab[data-mentor]');if(mt)mt.onclick=()=>{mentorMode=true;vacationMode=false;infoMode=false;dashMode=false;deactivMode=false;clearSelection();render();};
-  const vt=document.querySelector('.tab[data-vacation]');if(vt)vt.onclick=()=>{vacationMode=true;infoMode=false;dashMode=false;deactivMode=false;mentorMode=false;clearSelection();render();};
+  const it=document.querySelector('.tab[data-info]');if(it)it.onclick=()=>{infoMode=true;dashMode=false;deactivMode=false;vacationMode=false;mentorMode=false;kpiMode=false;clearSelection();render();};
+  const kt=document.querySelector('.tab[data-kpi]');if(kt)kt.onclick=()=>{kpiMode=true;mentorMode=false;vacationMode=false;infoMode=false;dashMode=false;deactivMode=false;clearSelection();render();};
+  const mt=document.querySelector('.tab[data-mentor]');if(mt)mt.onclick=()=>{mentorMode=true;vacationMode=false;infoMode=false;dashMode=false;deactivMode=false;kpiMode=false;clearSelection();render();};
+  const vt=document.querySelector('.tab[data-vacation]');if(vt)vt.onclick=()=>{vacationMode=true;infoMode=false;dashMode=false;deactivMode=false;mentorMode=false;kpiMode=false;clearSelection();render();};
   renderPresence();
 }
 
@@ -1181,18 +1185,26 @@ function render(){
   const dw=document.getElementById('dashWrap');const tw=document.querySelector('.table-wrap');const cw=document.getElementById('cardsWrap');
   const fb=document.getElementById('filtersBar');const sb2=document.getElementById('statsBar');const bb=document.getElementById('bulkBar');
   const iw=document.getElementById('infoWrap');const dacw=document.getElementById('deactivWrap');
-  if(mentorMode){
+  if(kpiMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
     iw.classList.add('hidden');dacw.classList.add('hidden');
     document.getElementById('vacationWrap').classList.add('hidden');
-    document.getElementById('mentorWrap').classList.remove('hidden');renderMentors();
+    document.getElementById('mentorWrap').classList.add('hidden');
+    document.getElementById('kpiWrap').classList.remove('hidden');
+    renderKPI();
+  } else if(mentorMode){
+    fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
+    if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
+    iw.classList.add('hidden');dacw.classList.add('hidden');
+    document.getElementById('vacationWrap').classList.add('hidden');
+    document.getElementById('mentorWrap').classList.remove('hidden');document.getElementById('kpiWrap').classList.add('hidden');renderMentors();
   } else if(vacationMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
     iw.classList.add('hidden');dacw.classList.add('hidden');
     document.getElementById('vacationWrap').classList.remove('hidden');
-    document.getElementById('mentorWrap').classList.add('hidden');renderVacation();
+    document.getElementById('mentorWrap').classList.add('hidden');document.getElementById('kpiWrap').classList.add('hidden');renderVacation();
   } else if(deactivMode){
     fb.style.display='none';sb2.style.display='none';bb.classList.remove('show');
     if(tw)tw.style.display='none';if(cw)cw.style.display='none';if(dw)dw.style.display='none';
@@ -1948,6 +1960,135 @@ function renderMentors(){
 }
 window.renderMentors = renderMentors;
 // ===== END MENTORS =====
+
+// ===== KPI =====
+async function renderKPI(){
+  const wrap = document.getElementById('kpiWrap');
+  wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Загрузка...</div>';
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const from = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const to = `${year}-${String(month+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+
+  const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+  const {data, error} = await sb.from('candidates')
+    .select('recruiter,status')
+    .gte('date', from)
+    .lte('date', to)
+    .eq('status', 'вышел в смену');
+
+  if(error){
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Ошибка загрузки</div>';
+    return;
+  }
+
+  // Считаем по рекрутерам
+  const counts = {};
+  ALL_R.forEach(r => counts[r] = 0);
+  (data||[]).forEach(row => {
+    if(counts[row.recruiter] !== undefined) counts[row.recruiter]++;
+  });
+
+  function getKPI(n){
+    if(n >= 16) return {pct:100, label:'100%', color:'#15803d', bg:'#dcfce7', emoji:'🏆'};
+    if(n >= 10) return {pct:50,  label:'50%',  color:'#b06000', bg:'#fff4e0', emoji:'📈'};
+    return           {pct:0,   label:'0%',   color:'#b91c1c', bg:'#fee2e2', emoji:'📉'};
+  }
+
+  const sorted = [...ALL_R].sort((a,b) => counts[b] - counts[a]);
+  const total = Object.values(counts).reduce((s,v)=>s+v,0);
+  const done100 = ALL_R.filter(r => counts[r] >= 16).length;
+  const done50  = ALL_R.filter(r => counts[r] >= 10 && counts[r] < 16).length;
+  const done0   = ALL_R.filter(r => counts[r] < 10).length;
+
+  let html = `<div style="max-width:900px;margin:0 auto;padding-bottom:32px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text)">🏆 KPI менеджеров</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:3px">${monthNames[month]} ${year} · с 01 по ${daysInMonth} число · вышедшие курьеры</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="background:#dcfce7;border-radius:10px;padding:8px 16px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#15803d">${done100}</div>
+          <div style="font-size:11px;color:#15803d">100% KPI</div>
+        </div>
+        <div style="background:#fff4e0;border-radius:10px;padding:8px 16px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#b06000">${done50}</div>
+          <div style="font-size:11px;color:#b06000">50% KPI</div>
+        </div>
+        <div style="background:#fee2e2;border-radius:10px;padding:8px 16px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#b91c1c">${done0}</div>
+          <div style="font-size:11px;color:#b91c1c">0% KPI</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:8px 16px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--text)">${total}</div>
+          <div style="font-size:11px;color:var(--muted)">Всего вышло</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:16px;box-shadow:var(--sh);overflow:hidden;margin-bottom:16px">
+      <div style="background:#1c1c1e;padding:12px 18px">
+        <div style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.4px">📊 Рейтинг</div>
+      </div>
+      <div style="padding:16px">
+        ${sorted.map((r,i) => {
+          const n = counts[r];
+          const k = getKPI(n);
+          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+          const barW = Math.min(100, Math.round(n/16*100));
+          return `<div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:15px">${medal}</span>
+                <span style="font-size:13px;font-weight:600;color:var(--text)">${r}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:13px;font-weight:700;color:var(--text)">${n} <span style="font-size:11px;font-weight:400;color:var(--muted)">курьеров</span></span>
+                <span style="background:${k.bg};color:${k.color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">${k.emoji} ${k.label}</span>
+              </div>
+            </div>
+            <div style="background:var(--bg);border-radius:6px;height:8px;overflow:hidden">
+              <div style="background:${k.color};height:100%;width:${barW}%;border-radius:6px;transition:width .3s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px">
+              <span style="font-size:10px;color:var(--muted)">0</span>
+              <span style="font-size:10px;color:#b06000">10 (50%)</span>
+              <span style="font-size:10px;color:#15803d">16+ (100%)</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">Правила KPI</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#dcfce7;border-radius:10px">
+          <span style="font-size:20px">🏆</span>
+          <div><span style="font-weight:700;color:#15803d">100% KPI</span> <span style="color:#15803d;font-size:13px">— от 16 и более вышедших курьеров</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff4e0;border-radius:10px">
+          <span style="font-size:20px">📈</span>
+          <div><span style="font-weight:700;color:#b06000">50% KPI</span> <span style="color:#b06000;font-size:13px">— от 10 до 15 вышедших курьеров</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fee2e2;border-radius:10px">
+          <span style="font-size:20px">📉</span>
+          <div><span style="font-weight:700;color:#b91c1c">0% KPI</span> <span style="color:#b91c1c;font-size:13px">— от 0 до 9 вышедших курьеров</span></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px">* Считается статус: «вышел в смену»</div>
+    </div>
+  </div>`;
+
+  wrap.innerHTML = html;
+}
+window.renderKPI = renderKPI;
+// ===== END KPI =====
 </script>
 <!-- Paste Modal -->
 <div class="modal-bg" id="pasteBg">
