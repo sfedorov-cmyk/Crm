@@ -1241,7 +1241,7 @@ function refreshDash(){if(dashPeriod==='custom'){const f=document.getElementById
 async function renderDashMain(from,to){
   const{data,error}=await sb.from('candidates').select('recruiter,status,da').gte('date',from).lte('date',to);
   if(error||!data){document.getElementById('dashContent').innerHTML='<div style="color:var(--muted)">Ошибка загрузки</div>';return;}
-  const STATS=['думает','недозвон','отказ','принят','оформление','стажировка','резерв','жду доки','проверка СБ','передан в логистику'];
+  const STATS=['принят','оформление','стажировка','резерв','жду доки','проверка СБ','передан в логистику','вышел в смену'];
   const SC={'думает':'#eef2ff','недозвон':'#f2f2f7','отказ':'#fef2f2','принят':'#f0fdf4','оформление':'#ecfeff','стажировка':'#faf5ff','резерв':'#dbeafe','жду доки':'#fce7f3','проверка СБ':'#fef9c3','передан в логистику':'#dcfce7'};
   const ST={'думает':'#3730a3','недозвон':'#8e8e93','отказ':'#b91c1c','принят':'#15803d','оформление':'#0e7490','стажировка':'#7e22ce','резерв':'#1d4ed8','жду доки':'#9d174d','проверка СБ':'#854d0e','передан в логистику':'#15803d'};
   const stats={};ALL_R.forEach(r=>{stats[r]={total:0,logistic:0,statuses:{}}});
