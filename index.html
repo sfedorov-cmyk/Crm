@@ -522,9 +522,8 @@ async function renderDeactiv(){
   wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">Загрузка...</div>';
   await loadDeactivData();
   const fr=deactivFiltered();
-  const okrugOpts=DEACTIV_OKRUGS.map(o=>`<option value="${o}">\${o}</option>`).join('');
 
-  wrap.innerHTML=`<div style="max-width:1000px;margin:0 auto;padding-bottom:24px">
+  wrap.innerHTML=`<div style="max-width:1100px;margin:0 auto;padding-bottom:24px">
     <div class="deactiv-header">
       <div class="deactiv-title">⛔ Деактив! <span class="deactiv-badge">${deactivRows.length} чел.</span></div>
       <button class="btn-deactiv-add" onclick="addDeactivRow()">+ Добавить строку</button>
@@ -541,17 +540,18 @@ async function renderDeactiv(){
 
     <div style="background:var(--surface);border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:600px">
           <thead>
             <tr style="background:#fff5f5">
               <th style="width:44px;padding:10px 8px;border-bottom:2px solid #fecaca;border-right:1px solid #fecaca;text-align:center;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px">#</th>
-              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;border-right:1px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px;width:38%">ФИО</th>
-              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;border-right:1px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px;width:18%">Округ</th>
-              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Комментарий</th>
+              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;border-right:1px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px;width:110px">Дата</th>
+              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;border-right:1px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px;width:25%">ФИО</th>
+              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;border-right:1px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Комментарий</th>
+              <th style="padding:10px 14px;border-bottom:2px solid #fecaca;text-align:left;font-size:11px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:.3px;width:130px">Рекрут</th>
             </tr>
           </thead>
           <tbody>
-            ${fr.length===0?`<tr><td colspan="4" style="padding:50px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">✅</div><div style="font-size:14px;font-weight:500">${deactivRows.length===0?'Список пуст — нажмите «+ Добавить строку»':'Ничего не найдено'}</div></td></tr>`:''}
+            ${fr.length===0?`<tr><td colspan="5" style="padding:50px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">✅</div><div style="font-size:14px;font-weight:500">${deactivRows.length===0?'Список пуст — нажмите «+ Добавить строку»':'Ничего не найдено'}</div></td></tr>`:''}
             ${fr.map((r,i)=>`<tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='#fff8f8'" onmouseout="this.style.background=''">
               <td style="padding:0;border-right:1px solid var(--border);text-align:center;vertical-align:middle;width:44px">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px">
@@ -560,27 +560,36 @@ async function renderDeactiv(){
                 </div>
               </td>
               <td style="padding:0;border-right:1px solid var(--border);vertical-align:middle">
+                <div class="dtbl-cell" contenteditable="true"
+                  onblur="saveDeactivCell('${r.id}','deactiv_date',this.textContent.trim())"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                  onpaste="setTimeout(()=>{saveDeactivCell('${r.id}','deactiv_date',this.textContent.trim())},100)"
+                  style="padding:10px 14px;min-height:40px;outline:none;cursor:text;font-size:13px;color:var(--muted)"
+                >${r.deactiv_date||''}</div>
+              </td>
+              <td style="padding:0;border-right:1px solid var(--border);vertical-align:middle">
                 <div class="dtbl-fio dtbl-cell" contenteditable="true"
-                  data-id="${r.id}" data-field="fio"
                   onblur="saveDeactivCell('${r.id}','fio',this.textContent.trim())"
                   onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                  onpaste="setTimeout(()=>{saveDeactivCell('${r.id}','fio',this.textContent.trim())},100)"
                   style="padding:10px 14px;min-height:40px;outline:none;font-weight:600;cursor:text;white-space:pre-wrap;word-break:break-word"
                 >${r.fio||''}</div>
               </td>
               <td style="padding:0;border-right:1px solid var(--border);vertical-align:middle">
-                <select onchange="saveDeactivCell('${r.id}','okrug',this.value)"
-                  style="width:100%;border:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text);padding:10px 8px 10px 14px;cursor:pointer;outline:none;min-height:40px;-webkit-appearance:none;appearance:none">
-                  <option value="—"${(!r.okrug||r.okrug==='—')?' selected':''}>—</option>
-                  ${DEACTIV_OKRUGS.map(o=>`<option value="${o}"${r.okrug===o?' selected':''}>${o}</option>`).join('')}
-                </select>
+                <div class="dtbl-cell" contenteditable="true"
+                  onblur="saveDeactivCell('${r.id}','comment',this.textContent.trim())"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                  onpaste="setTimeout(()=>{saveDeactivCell('${r.id}','comment',this.textContent.trim())},100)"
+                  style="padding:10px 14px;min-height:40px;outline:none;color:var(--text);cursor:text;white-space:pre-wrap;word-break:break-word"
+                >${r.comment||''}</div>
               </td>
               <td style="padding:0;vertical-align:middle">
                 <div class="dtbl-cell" contenteditable="true"
-                  data-id="${r.id}" data-field="comment"
-                  onblur="saveDeactivCell('${r.id}','comment',this.textContent.trim())"
+                  onblur="saveDeactivCell('${r.id}','added_by',this.textContent.trim())"
                   onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
-                  style="padding:10px 14px;min-height:40px;outline:none;color:var(--text);cursor:text;white-space:pre-wrap;word-break:break-word"
-                >${r.comment||''}</div>
+                  onpaste="setTimeout(()=>{saveDeactivCell('${r.id}','added_by',this.textContent.trim())},100)"
+                  style="padding:10px 14px;min-height:40px;outline:none;color:var(--text);cursor:text;font-size:12px"
+                >${r.added_by||''}</div>
               </td>
             </tr>`).join('')}
           </tbody>
@@ -592,6 +601,7 @@ async function renderDeactiv(){
         </button>
       </div>
     </div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px;margin-top:4px">✏️ Кликните на ячейку для редактирования · Ctrl+V для вставки текста</div>
   </div>`;
 
   document.querySelectorAll('.dtbl-cell').forEach(el=>{
@@ -1170,6 +1180,7 @@ function renderTabs(){
   const recs=getRecs();
   let tabs=recs.map((r,i)=>`<div class="tab${!dashMode&&!infoMode&&!deactivMode&&i===tab?' active':''}" data-i="${i}">${r} <span class="pdot" data-rec="${r}" style="font-size:11px">🤍</span></div>`).join('');
   if(isAdmin)tabs+=`<div class="tab${dashMode?' active':''}" data-dash="1">📊 Дашборд</div>`;
+  tabs+=`<div class="tab tab-deactiv${deactivMode?' active':''}" data-deactiv="1">⛔ Деактив!</div>`;
   tabs+=`<div class="tab${kpiMode?' active':''}" data-kpi="1">🏆 KPI</div>`;
   tabs+=`<div class="tab${mentorMode?' active':''}" data-mentor="1">🤝 Наставники</div>`;
   tabs+=`<div class="tab${vacationMode?' active':''}" data-vacation="1">🌴 Отпуска</div>`;
@@ -1178,6 +1189,7 @@ function renderTabs(){
   document.querySelectorAll('.tab[data-i]').forEach(t=>{t.onclick=()=>{dashMode=false;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;kpiMode=false;tab=+t.dataset.i;F={from:td(),to:td(),okrug:'',da:'',status:'',city:'',fio:'',tel:''};clearSelection();loadData()}});
   const dt=document.querySelector('.tab[data-dash]');if(dt)dt.onclick=async()=>{dashMode=true;infoMode=false;deactivMode=false;vacationMode=false;mentorMode=false;clearSelection();await loadData();render();};
   const it=document.querySelector('.tab[data-info]');if(it)it.onclick=()=>{infoMode=true;dashMode=false;deactivMode=false;vacationMode=false;mentorMode=false;kpiMode=false;clearSelection();render();};
+  const dact=document.querySelector('.tab[data-deactiv]');if(dact)dact.onclick=()=>{deactivMode=true;infoMode=false;dashMode=false;vacationMode=false;mentorMode=false;kpiMode=false;clearSelection();render();};
   const kt=document.querySelector('.tab[data-kpi]');if(kt)kt.onclick=()=>{kpiMode=true;mentorMode=false;vacationMode=false;infoMode=false;dashMode=false;deactivMode=false;clearSelection();render();};
   const mt=document.querySelector('.tab[data-mentor]');if(mt)mt.onclick=()=>{mentorMode=true;vacationMode=false;infoMode=false;dashMode=false;deactivMode=false;kpiMode=false;clearSelection();render();};
   const vt=document.querySelector('.tab[data-vacation]');if(vt)vt.onclick=()=>{vacationMode=true;infoMode=false;dashMode=false;deactivMode=false;mentorMode=false;kpiMode=false;clearSelection();render();};
