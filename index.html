@@ -1578,16 +1578,22 @@ const VACATION_DEFAULT = [
 
 let vacationData = null;
 
-function loadVacationData(){
+async function loadVacationData(){
   try{
-    const saved = localStorage.getItem('hrcrm_vacations');
-    if(saved) vacationData = JSON.parse(saved);
-    else vacationData = JSON.parse(JSON.stringify(VACATION_DEFAULT));
-  }catch(e){ vacationData = JSON.parse(JSON.stringify(VACATION_DEFAULT)); }
+    const{data,error}=await sb.from('info_data').select('value').eq('key','hrcrm_vacations').single();
+    if(!error&&data) vacationData=JSON.parse(data.value);
+    else vacationData=JSON.parse(JSON.stringify(VACATION_DEFAULT));
+  }catch(e){
+    const saved=localStorage.getItem('hrcrm_vacations');
+    vacationData=saved?JSON.parse(saved):JSON.parse(JSON.stringify(VACATION_DEFAULT));
+  }
 }
 
-function saveVacationData(){
-  localStorage.setItem('hrcrm_vacations', JSON.stringify(vacationData));
+async function saveVacationData(){
+  localStorage.setItem('hrcrm_vacations',JSON.stringify(vacationData));
+  try{
+    await sb.from('info_data').upsert({key:'hrcrm_vacations',value:JSON.stringify(vacationData),updated_at:new Date().toISOString(),updated_by:myRec||''},{onConflict:'key'});
+  }catch(e){console.warn('vacation save error',e);}
 }
 
 function parseDate(str, year){
@@ -1603,8 +1609,8 @@ function fmtPeriod(p){
   return `${p.start} — ${String(end.getDate()).padStart(2,'0')}.${String(end.getMonth()+1).padStart(2,'0')} (${p.days} дн.)`;
 }
 
-function renderVacation(){
-  loadVacationData();
+async function renderVacation(){
+  await loadVacationData();
   const wrap = document.getElementById('vacationWrap');
   const canEdit = isAdmin || (CU && CU.email === 'ya.fedorova@growfood.pro');
   const now = new Date();
@@ -1701,9 +1707,9 @@ function renderVacation(){
 window.renderVacation = renderVacation;
 
 // --- Редактирование ---
-function vacationSaveGroupName(gi, name){
+async function vacationSaveGroupName(gi, name){
   vacationData[gi].group = name.trim();
-  saveVacationData();
+  await saveVacationData();
 }
 window.vacationSaveGroupName = vacationSaveGroupName;
 
@@ -1720,7 +1726,7 @@ window.vacationDelGroup=vacationDelGroup;
 
 function vacationAddGroup(){
   vacationData.push({group:'Новая группа',color:'#e3f2fd',accent:'#1976d2',members:[]});
-  saveVacationData(); renderVacation();
+  await saveVacationData(); renderVacation();
 }
 window.vacationAddGroup = vacationAddGroup;
 
@@ -1728,14 +1734,14 @@ function vacationAddMember(gi){
   const name = prompt('ФИО сотрудника:');
   if(!name||!name.trim()) return;
   vacationData[gi].members.push({name:name.trim(), periods:[]});
-  saveVacationData(); renderVacation();
+  await saveVacationData(); renderVacation();
 }
 window.vacationAddMember = vacationAddMember;
 
 function vacationDelMember(gi, mi){
   if(!confirm('Удалить сотрудника из графика?')) return;
   vacationData[gi].members.splice(mi, 1);
-  saveVacationData(); renderVacation();
+  await saveVacationData(); renderVacation();
 }
 window.vacationDelMember = vacationDelMember;
 
@@ -1751,7 +1757,7 @@ function vacationAddPeriod(gi, mi, monthIdx){
     const [bd,bm]=b.start.split('.').map(Number);
     return am!==bm ? am-bm : ad-bd;
   });
-  saveVacationData(); renderVacation();
+  await saveVacationData(); renderVacation();
 }
 window.vacationAddPeriod = vacationAddPeriod;
 
@@ -1766,7 +1772,7 @@ function vacationEditPeriod(gi, mi, pi){
     const newDays = prompt('Количество дней:', p.days);
     if(newDays) p.days = parseInt(newDays);
   }
-  saveVacationData(); renderVacation();
+  await saveVacationData(); renderVacation();
 }
 window.vacationEditPeriod = vacationEditPeriod;
 // ===== END VACATIONS =====
