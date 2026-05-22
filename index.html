@@ -1713,7 +1713,7 @@ async function vacationSaveGroupName(gi, name){
 }
 window.vacationSaveGroupName = vacationSaveGroupName;
 
-function vacationDelGroup(gi){
+async function vacationDelGroup(gi){
   if(!vacationData){loadVacationData();}
   gi=parseInt(gi);
   if(!vacationData||!vacationData[gi])return;
@@ -1724,13 +1724,13 @@ function vacationDelGroup(gi){
 }
 window.vacationDelGroup=vacationDelGroup;
 
-function vacationAddGroup(){
+async function vacationAddGroup(){
   vacationData.push({group:'Новая группа',color:'#e3f2fd',accent:'#1976d2',members:[]});
   await saveVacationData(); renderVacation();
 }
 window.vacationAddGroup = vacationAddGroup;
 
-function vacationAddMember(gi){
+async function vacationAddMember(gi){
   const name = prompt('ФИО сотрудника:');
   if(!name||!name.trim()) return;
   vacationData[gi].members.push({name:name.trim(), periods:[]});
@@ -1738,14 +1738,14 @@ function vacationAddMember(gi){
 }
 window.vacationAddMember = vacationAddMember;
 
-function vacationDelMember(gi, mi){
+async function vacationDelMember(gi, mi){
   if(!confirm('Удалить сотрудника из графика?')) return;
   vacationData[gi].members.splice(mi, 1);
   await saveVacationData(); renderVacation();
 }
 window.vacationDelMember = vacationDelMember;
 
-function vacationAddPeriod(gi, mi, monthIdx){
+async function vacationAddPeriod(gi, mi, monthIdx){
   const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
   const day = prompt(`Дата начала в ${months[monthIdx]} (ДД.ММ, например 15.0${monthIdx+1}):`, `01.${String(monthIdx+1).padStart(2,'0')}`);
   if(!day) return;
@@ -1761,7 +1761,7 @@ function vacationAddPeriod(gi, mi, monthIdx){
 }
 window.vacationAddPeriod = vacationAddPeriod;
 
-function vacationEditPeriod(gi, mi, pi){
+async function vacationEditPeriod(gi, mi, pi){
   const p = vacationData[gi].members[mi].periods[pi];
   const action = prompt(`Период: ${fmtPeriod(p)}\n\nВведите "удалить" для удаления или новую дату начала (ДД.ММ):`, p.start);
   if(!action) return;
