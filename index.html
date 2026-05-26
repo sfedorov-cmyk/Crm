@@ -1269,7 +1269,7 @@ function setPeriod(p){dashPeriod=p;if(p!=='custom'){dashFrom='';dashTo='';}rende
 function refreshDash(){if(dashPeriod==='custom'){const f=document.getElementById('dashFrom');const t=document.getElementById('dashTo');if(f)dashFrom=f.value;if(t)dashTo=t.value;}renderDashboard();}window.refreshDash=refreshDash;
 
 async function renderDashMain(from,to){
-  const{data,error}=await sb.from('candidates').select('recruiter,status,da').gte('date',from).lte('date',to);
+  const{data,error}=await sb.from('candidates').select('recruiter,status,da').gte('date',from).lte('date',to).limit(10000);
   if(error||!data){document.getElementById('dashContent').innerHTML='<div style="color:var(--muted)">Ошибка загрузки</div>';return;}
   const STATS=['принят','оформление','стажировка','резерв','жду доки','проверка СБ','передан в логистику','вышел в смену'];
   const SC={'думает':'#eef2ff','недозвон':'#f2f2f7','отказ':'#fef2f2','принят':'#f0fdf4','оформление':'#ecfeff','стажировка':'#faf5ff','резерв':'#dbeafe','жду доки':'#fce7f3','проверка СБ':'#fef9c3','передан в логистику':'#dcfce7'};
