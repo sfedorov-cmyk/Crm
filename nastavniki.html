@@ -975,6 +975,113 @@ function toggleTheme(){
   const saved=localStorage.getItem('nastavniki_theme');
   if(saved==='light'){isDark=false;document.body.classList.add('light');document.getElementById('themeBtn').textContent='☀️';}
 })();
+
+// ===== СИНХРОНИЗАЦИЯ С CRM =====
+// Определяем лист (city) и наставника по городу и округу из CRM
+function getCityAndNastavnik(crmCity, crmOkrug) {
+  const city = (crmCity||'').toUpperCase();
+  const okrug = (crmOkrug||'').trim();
+
+  if (city === 'SPB') {
+    const nastavnik = NASTAVNIK_MAP.spb[okrug] || '';
+    return { city: 'spb', nastavnik };
+  }
+
+  if (city === 'MSK') {
+    const severRayons = ['СЗАО','САО','СВАО','ВАО'];
+    const yugRayons   = ['ЮАО','ЮВАО','ЮЗАО','ЗАО'];
+
+    if (severRayons.includes(okrug)) {
+      const nastavnik = NASTAVNIK_MAP.msk_sever[okrug] || '';
+      return { city: 'msk_sever', nastavnik };
+    }
+    if (yugRayons.includes(okrug)) {
+      const nastavnik = NASTAVNIK_MAP.msk_yug[okrug] || '';
+      return { city: 'msk_yug', nastavnik };
+    }
+    // МСК но район не определён — кладём в msk_sever
+    return { city: 'msk_sever', nastavnik: '' };
+  }
+
+  return null; // не МСК и не СПб — пропускаем
+}
+
+// Хранилище уже обработанных ID кандидатов (чтобы не дублировать)
+// Используем Supabase: храним crm_candidate_id в таблице nastavniki
+async function syncFromCRM() {
+  try {
+    // 1. Берём все записи из CRM со статусом 'sb' (Проверка СБ), только МСК и СПб
+    const { data: crmRows, error: crmErr } = await sb
+      .from('candidates')  // ← таблица CRM (тот же Supabase-проект)
+      .select('id,fio,city,okrug,date,tel')
+      .eq('status', 'sb')
+      .in('city', ['MSK', 'SPB', 'msk', 'spb']);
+
+    if (crmErr) { console.warn('CRM sync error:', crmErr.message); return; }
+    if (!crmRows || !crmRows.length) return;
+
+    // 2. Берём уже перенесённые crm_id из nastavniki
+    const { data: existing } = await sb
+      .from('nastavniki')
+      .select('crm_id')
+      .not('crm_id', 'is', null);
+
+    const existingIds = new Set((existing||[]).map(r => r.crm_id));
+
+    // 3. Переносим новых
+    for (const c of crmRows) {
+      if (existingIds.has(String(c.id))) continue; // уже перенесён
+
+      const mapped = getCityAndNastavnik(c.city, c.okrug);
+      if (!mapped) continue; // не МСК и не СПб
+
+      const newRecord = {
+        crm_id:          String(c.id),
+        city:            mapped.city,
+        name:            c.fio || '—',
+        okrug:           c.okrug || '',
+        nastavnik:       mapped.nastavnik,
+        date_account:    c.date || new Date().toISOString().split('T')[0],
+        date_first_shift:'',
+        status:          'handed',   // статус по умолчанию при переносе
+        comment:         c.tel && c.tel !== '—' ? '📞 ' + c.tel : '',
+        smeny:           0,
+        bonus:           'none',
+      };
+
+      const { error: insErr } = await sb.from('nastavniki').insert(newRecord);
+      if (insErr) console.warn('Insert error:', insErr.message);
+    }
+
+    // 4. Синхронизируем статус "Вышел в смену" → "works"
+    const { data: smenaRows } = await sb
+      .from('candidates')
+      .select('id')
+      .eq('status', 'smena')
+      .in('city', ['MSK', 'SPB', 'msk', 'spb']);
+
+    if (smenaRows && smenaRows.length) {
+      const smenaIds = smenaRows.map(r => String(r.id));
+      const { error: updErr } = await sb
+        .from('nastavniki')
+        .update({ status: 'works' })
+        .in('crm_id', smenaIds)
+        .neq('status', 'works'); // обновляем только если ещё не "работает"
+      if (updErr) console.warn('Status sync error:', updErr.message);
+    }
+
+    // Обновляем таблицу если были изменения
+    await loadData();
+
+  } catch(e) {
+    console.warn('Sync exception:', e);
+  }
+}
+
+// Запускаем синхронизацию сразу и каждые 30 секунд
+syncFromCRM();
+setInterval(() => { if (!document.hidden) syncFromCRM(); }, 30000);
+// ===== END СИНХРОНИЗАЦИЯ С CRM =====
 </script>
 </body>
 </html>
