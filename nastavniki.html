@@ -720,6 +720,7 @@ async function saveBlock(id,reason,modal){
 window.saveBlock=saveBlock;
 function switchTab(tab){
   currentTab=tab;
+  localStorage.setItem('nastavniki_tab', tab);
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   loadData();
 }
@@ -960,6 +961,14 @@ async function deleteSelected(){
 window.deleteSelected=deleteSelected;
 
 loadTariffs();
+// Восстанавливаем последний активный таб
+(function(){
+  const savedTab = localStorage.getItem('nastavniki_tab');
+  if (savedTab && ['spb','msk_yug','msk_sever'].includes(savedTab)) {
+    currentTab = savedTab;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===savedTab));
+  }
+})();
 loadData();
 
 // THEME
