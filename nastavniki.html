@@ -1,43 +1,4 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Наставники GF</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%231a1a1a%22/><text y=%2224%22 x=%224%22 font-size=%2218%22 font-family=%22Arial%22 font-weight=%22bold%22 fill=%22%23c9a84c%22>НС</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#0f0f0f;
-  --bg2:#1a1a1a;
-  --bg3:#242424;
-  --surface:#1e1e1e;
-  --surface2:#2a2a2a;
-  --border:#2e2e2e;
-  --border2:#3a3a3a;
-  --text:#f5f5f5;
-  --text2:#a0a0a0;
-  --gold:#c9a84c;
-  --gold2:#e8c96a;
-  --gold-dim:#8a6d2a;
-  --gold-bg:rgba(201,168,76,.08);
-  --gold-bg2:rgba(201,168,76,.15);
-  --green:#2d6a4f;
-  --green-bg:rgba(45,106,79,.15);
-  --green-text:#52b788;
-  --handed-bg:rgba(90,60,180,.15);
-  --handed-text:#a78bfa;
-  --yellow-bg:rgba(186,160,47,.12);
-  --yellow-text:#d4b82a;
-  --orange-bg:rgba(180,100,30,.15);
-  --orange-text:#e07a38;
-  --red-bg:rgba(160,40,40,.15);
-  --red-text:#e05555;
-  --gray-bg:rgba(80,80,80,.15);
-  --gray-text:#888;
-  --r:10px;--rs:8px;
+
   --sh:0 2px 12px rgba(0,0,0,.4);
   --sh-gold:0 0 20px rgba(201,168,76,.12);
 }
@@ -979,35 +940,53 @@ function toggleTheme(){
 // ===== СИНХРОНИЗАЦИЯ С CRM =====
 // Определяем лист (city) и наставника по городу и округу из CRM
 function getCityAndNastavnik(crmCity, crmOkrug) {
-  const city = (crmCity||'').toUpperCase();
-  // Парсим округ из формата "СПб : ВОСТОК", "МСК : ЮЗАО", "СЕВЕР : САО"
-  let okrug = (crmOkrug||'').trim();
-  // Убираем префикс до " : " если есть
-  if (okrug.includes(' : ')) {
-    okrug = okrug.split(' : ').pop().trim();
-  } else if (okrug.includes(':')) {
-    okrug = okrug.split(':').pop().trim();
-  }
-  // Маппинг сокращений к значениям в NASTAVNIK_MAP
-  const okrugAlias = {
-    'ВОСТОК': 'Восток', 'восток': 'Восток',
-    'СЗ': 'СЗ', 'СВ': 'СВ', 'ЮЗ': 'ЮЗ', 'ЮВ': 'ЮВ',
-    'ЮБ': 'ЮЗ', 'ЮВ': 'ЮВ',
-    'СЗАО': 'СЗАО', 'САО': 'САО', 'СВАО': 'СВАО', 'ВАО': 'ВАО',
-    'ЮАО': 'ЮАО', 'ЮВАО': 'ЮВАО', 'ЮЗАО': 'ЮЗАО', 'ЗАО': 'ЗАО',
-    'ЦАО': 'ЦАО',
-  };
-  okrug = okrugAlias[okrug] || okrug;
-
-  // Определяем город по полю city и по префиксу в okrug ("СПб : ВОСТОК", "МСК : ЮЗАО")
+  const crmOkrugRaw = (crmOkrug||'').trim().toUpperCase();
   const crmCityUpper = (crmCity||'').toUpperCase();
-  const crmOkrugRaw = (crmOkrug||'').toUpperCase();
-  const isSpb = crmCityUpper.includes('СПБ') || crmCityUpper.includes('SPB') || crmCityUpper.includes('САНКТ') || crmOkrugRaw.startsWith('СПБ') || crmOkrugRaw.startsWith('СПБ');
-  const isMsk = crmCityUpper.includes('МСК') || crmCityUpper.includes('MSK') || crmCityUpper.includes('МОСКВА') || crmOkrugRaw.startsWith('МСК') || crmOkrugRaw.startsWith('СЕВЕР') || crmOkrugRaw.startsWith('ЮГ');
+
+  // Определяем префикс города из поля okrug
+  // Форматы: "СПБ : ВОСТОК", "СЕВЕР : САО", "ЮГ : ЮВАО", "МСК : ЮЗАО"
+  let prefix = '';
+  let okrugPart = crmOkrugRaw;
+  if (crmOkrugRaw.includes(' : ')) {
+    const parts = crmOkrugRaw.split(' : ');
+    prefix = parts[0].trim();
+    okrugPart = parts[1].trim();
+  } else if (crmOkrugRaw.includes(':')) {
+    const parts = crmOkrugRaw.split(':');
+    prefix = parts[0].trim();
+    okrugPart = parts[1].trim();
+  }
+
+  // Маппинг к значениям в NASTAVNIK_MAP
+  const okrugAlias = {
+    'ВОСТОК': 'Восток',
+    'СЗ': 'СЗ', 'СВ': 'СВ', 'ЮЗ': 'ЮЗ', 'ЮВ': 'ЮВ',
+    'СЗАО': 'СЗАО', 'САО': 'САО', 'СВАО': 'СВАО', 'ВАО': 'ВАО',
+    'ЮАО': 'ЮАО', 'ЮВАО': 'ЮВАО', 'ЮЗАО': 'ЮЗАО', 'ЗАО': 'ЗАО', 'ЦАО': 'ЦАО',
+  };
+  const okrug = okrugAlias[okrugPart] || okrugPart;
+
+  // Определяем город по префиксу округа и полю city
+  const isSpb = prefix === 'СПБ' || crmCityUpper.includes('СПБ') || crmCityUpper.includes('SPB') || crmCityUpper.includes('САНКТ') || crmCityUpper.includes('СПБ');
+  const isMskSever = prefix === 'СЕВЕР';
+  const isMskYug = prefix === 'ЮГ';
+  const isMsk = prefix === 'МСК' || crmCityUpper.includes('МСК') || crmCityUpper.includes('MSK') || crmCityUpper.includes('МОСКВА');
 
   if (isSpb) {
     const nastavnik = NASTAVNIK_MAP.spb[okrug] || '';
     return { city: 'spb', nastavnik };
+  }
+
+  // МСК Север — явный префикс СЕВЕР
+  if (isMskSever) {
+    const nastavnik = NASTAVNIK_MAP.msk_sever[okrug] || '';
+    return { city: 'msk_sever', nastavnik };
+  }
+
+  // МСК Юг — явный префикс ЮГ
+  if (isMskYug) {
+    const nastavnik = NASTAVNIK_MAP.msk_yug[okrug] || '';
+    return { city: 'msk_yug', nastavnik };
   }
 
   if (isMsk) {
