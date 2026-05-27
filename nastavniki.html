@@ -982,12 +982,12 @@ function getCityAndNastavnik(crmCity, crmOkrug) {
   const city = (crmCity||'').toUpperCase();
   const okrug = (crmOkrug||'').trim();
 
-  if (city === 'SPB') {
+  if (city === 'SPB' || city === 'СПБ' || city === 'САНКТ-ПЕТЕРБУРГ') {
     const nastavnik = NASTAVNIK_MAP.spb[okrug] || '';
     return { city: 'spb', nastavnik };
   }
 
-  if (city === 'MSK') {
+  if (city === 'MSK' || city === 'МСК' || city === 'МОСКВА') {
     const severRayons = ['СЗАО','САО','СВАО','ВАО'];
     const yugRayons   = ['ЮАО','ЮВАО','ЮЗАО','ЗАО'];
 
@@ -1014,8 +1014,8 @@ async function syncFromCRM() {
     const { data: crmRows, error: crmErr } = await sb
       .from('candidates')  // ← таблица CRM (тот же Supabase-проект)
       .select('id,fio,city,okrug,date,tel')
-      .eq('status', 'sb')
-      .in('city', ['MSK', 'SPB', 'msk', 'spb']);
+      .eq('status', 'проверка СБ')
+      .in('city', ['MSK', 'SPB', 'msk', 'spb', 'Москва', 'СПб', 'Санкт-Петербург', 'МСК', 'СПБ']);
 
     if (crmErr) { console.warn('CRM sync error:', crmErr.message); return; }
     if (!crmRows || !crmRows.length) return;
@@ -1057,8 +1057,8 @@ async function syncFromCRM() {
     const { data: smenaRows } = await sb
       .from('candidates')
       .select('id')
-      .eq('status', 'smena')
-      .in('city', ['MSK', 'SPB', 'msk', 'spb']);
+      .eq('status', 'вышел в смену')
+      .in('city', ['MSK', 'SPB', 'msk', 'spb', 'Москва', 'СПб', 'Санкт-Петербург', 'МСК', 'СПБ']);
 
     if (smenaRows && smenaRows.length) {
       const smenaIds = smenaRows.map(r => String(r.id));
@@ -1085,3 +1085,4 @@ setInterval(() => { if (!document.hidden) syncFromCRM(); }, 30000);
 </script>
 </body>
 </html>
+
