@@ -314,6 +314,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
       <div class="fg"><label>Статус</label><select id="fStatus"><option value="—">—</option><option>думает</option><option>недозвон</option><option>отказ</option><option>принят</option><option>оформление</option><option>стажировка</option><option>резерв</option><option>жду доки</option><option>проверка СБ</option><option>передан в логистику</option><option>вышел в смену</option><option>перезвонить</option></select></div>
       <div class="fg"><label>Юр. Статус</label><select id="fJur"><option value="—">—</option><option>СМЗ</option><option>ИП</option><option>ТД</option><option>ГПХ</option></select></div>
       <div class="fg"><label>Город</label><select id="fCity"><option value="—">—</option><option>Санкт-Петербург</option><option>Москва</option><option>Казань</option><option>Нижний Новгород</option><option>Воронеж</option><option>Тольятти</option><option>Другой</option></select></div>
+      <div class="fg full"><label>Доп. заметка</label><textarea id="fNote2" placeholder="Дополнительно..."></textarea></div>
       <div class="fg full"><label>Комментарий</label>
         <div style="position:relative">
           <textarea id="fComment" placeholder="Заметки..." style="padding-right:44px"></textarea>
@@ -1397,7 +1398,7 @@ function renderStats(fr){
 
 function renderTable(fr){
   const allChk=fr.length>0&&fr.every(r=>selected.has(r.id));
-  document.getElementById('thead').innerHTML=`<tr><th><input type="checkbox" id="checkAll" ${allChk?'checked':''}></th><th></th><th>Дата</th><th>Время</th><th>ФИО</th><th>Тел</th><th>Округ</th><th>Да/Нет</th><th>Статус</th><th>Юр.Ст.</th><th>Город</th><th>Комментарий</th><th></th></tr>`;
+  document.getElementById('thead').innerHTML=`<tr><th><input type="checkbox" id="checkAll" ${allChk?'checked':''}></th><th></th><th>Дата</th><th>Время</th><th>ФИО</th><th>Тел</th><th>Округ</th><th>Да/Нет</th><th>Статус</th><th>Юр.Ст.</th><th>Город</th><th>Заметка</th><th>Комментарий</th><th></th></tr>`;
   document.getElementById('checkAll').onchange=function(){if(this.checked)selectAll(fr);else clearSelection();};
   if(!fr.length){document.getElementById('tbody').innerHTML=`<tr><td colspan="13"><div class="empty-state">Нет записей за выбранный период</div></td></tr>`;return}
   document.getElementById('tbody').innerHTML=fr.map(r=>{const sc=sClass(r.status);const chk=selected.has(r.id);return`
@@ -1410,6 +1411,7 @@ function renderTable(fr){
       <td style="white-space:nowrap">${r.okrug||'—'}</td>
       <td>${daBadge(r.da)}</td><td>${stBadge(r.status)}</td>
       <td>${r.jur||'—'}</td><td>${r.city||'—'}</td>
+      <td style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.note2)}">${r.note2||'—'}</td>
       <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.comment)}">${r.comment||'—'}</td>
       <td style="white-space:nowrap"><button onclick="copyRow('${r.id}')" title="Копировать строку" style="background:none;border:none;cursor:pointer;font-size:15px">📋</button><button onclick="openEdit('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:15px">✏️</button></td>
     </tr>`}).join('');
@@ -1427,6 +1429,7 @@ function renderCards(fr){
         <div class="card-top"><div class="card-name">${r.fio||'—'}</div><div class="card-time">${fd(r.date)} ${r.time||''}</div></div>
         <div class="card-tel" onclick="event.stopPropagation();copyPhone('${esc(r.tel||'')}')">${r.tel||'—'}</div>
         <div class="card-chips">${r.okrug&&r.okrug!=='—'?`<span class="chip c-empty">${r.okrug}</span>`:''}${daBadge(r.da)}${stBadge(r.status)}${r.jur&&r.jur!=='—'?`<span class="chip c-empty">${r.jur}</span>`:''}${r.city&&r.city!=='—'?`<span class="chip c-empty">${r.city}</span>`:''}</div>
+        ${r.note2?`<div class="card-comment" style="color:var(--accent-dark)">${r.note2}</div>`:''}
         ${r.comment?`<div class="card-comment">${r.comment}</div>`:''}
       </div>
     </div>`}).join('');
@@ -1444,7 +1447,7 @@ function initDrag(){
 function openModal(){
   editId=null;document.getElementById('modalTitle').textContent='Новая запись';document.getElementById('delBtn').classList.add('hidden');
   const dt=nowDT();document.getElementById('fDate').value=dt.date;document.getElementById('fTime').value=dt.time;
-  document.getElementById('fFio').value='';document.getElementById('fTel').value='';document.getElementById('fComment').value='';
+  document.getElementById('fFio').value='';document.getElementById('fTel').value='';document.getElementById('fComment').value='';document.getElementById('fNote2').value='';
   ['fOkrug','fDa','fStatus','fJur','fCity'].forEach(id=>{document.getElementById(id).value='—';});
   document.getElementById('modalBg').classList.add('open');setTimeout(()=>document.getElementById('fFio').focus(),300);
 }
@@ -1454,6 +1457,7 @@ function openEdit(id){
   document.getElementById('modalTitle').textContent='Редактировать';document.getElementById('delBtn').classList.remove('hidden');
   document.getElementById('fDate').value=r.date||'';document.getElementById('fTime').value=r.time||'';
   document.getElementById('fFio').value=r.fio||'';
+  document.getElementById('fNote2').value=r.note2||'';
   const tel=r.tel||'';document.getElementById('fTel').value=tel.startsWith('+7')?tel.slice(2):tel;
   document.getElementById('fOkrug').value=r.okrug||'—';document.getElementById('fDa').value=r.da||'—';
   document.getElementById('fStatus').value=r.status||'—';document.getElementById('fJur').value=r.jur||'—';
@@ -1468,7 +1472,7 @@ document.getElementById('saveBtn').onclick=async function(){
   const rec=getRecs()[tab]||getRecs()[0];
   const telRaw=document.getElementById('fTel').value.trim();
   const fioVal=document.getElementById('fFio').value.trim();
-  const d={recruiter:rec,date:document.getElementById('fDate').value,time:document.getElementById('fTime').value,fio:fioVal||'—',tel:telRaw?'+7'+telRaw.replace(/^\+?7?/,''):'—',okrug:document.getElementById('fOkrug').value||'—',da:document.getElementById('fDa').value||'—',status:document.getElementById('fStatus').value||'—',jur:document.getElementById('fJur').value||'—',city:document.getElementById('fCity').value||'—',comment:document.getElementById('fComment').value.trim()};
+  const d={recruiter:rec,date:document.getElementById('fDate').value,time:document.getElementById('fTime').value,fio:fioVal||'—',tel:telRaw?'+7'+telRaw.replace(/^\+?7?/,''):'—',okrug:document.getElementById('fOkrug').value||'—',da:document.getElementById('fDa').value||'—',status:document.getElementById('fStatus').value||'—',jur:document.getElementById('fJur').value||'—',city:document.getElementById('fCity').value||'—',comment:document.getElementById('fComment').value.trim(),note2:document.getElementById('fNote2').value.trim()};
   this.textContent='Сохраняю...';this.disabled=true;
   let saved=false;
   if(editId){const{error}=await sb.from('candidates').update(d).eq('id',editId);if(!error){saved=true}else{addToQueue({type:'update',data:d,rowId:editId});saved=true;}}
