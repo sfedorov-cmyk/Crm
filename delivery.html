@@ -185,7 +185,7 @@ async function loadAllData(){
       if(r.day==='_zp'){
         cityPrices[r.city][r.week_n]=r.value;
       }else if(cityState[r.city][r.week_n]&&cityState[r.city][r.week_n][r.day]!==undefined){
-        cityState[r.city][r.week_n][r.day]={value:r.value||'',locked:r.locked};
+        cityState[r.city][r.week_n][r.day]={value:r.value!=null&&r.value!==0?r.value:'',locked:r.locked};
       }
     });
   }
@@ -294,15 +294,23 @@ function renderTable(){
       cityState[city][+this.dataset.n][this.dataset.day].value=this.value===''?'':+this.value;
       updateRowTotals();
     });
-    inp.addEventListener('blur',function(){
-      saveCell(city,+this.dataset.n,this.dataset.day,this.value,cityState[city][+this.dataset.n][this.dataset.day].locked);
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const n=+this.dataset.n;const day=this.dataset.day;
+        cityState[city][n][day].value=this.value===''?'':+this.value;
+        saveCell(city,n,day,this.value,cityState[city][n][day].locked);
+        this.blur();
+      }
     });
-    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur();}});
   });
 
   tbody.querySelectorAll('.lock-btn').forEach(btn=>{
     btn.addEventListener('click',function(e){
       e.stopPropagation();const n=+this.dataset.n;const day=this.dataset.day;
+      const inp=this.closest('.cell-wrap').querySelector('.cell-input');
+      const val=inp?inp.value:'';
+      if(val!=='')cityState[city][n][day].value=+val;
       cityState[city][n][day].locked=!cityState[city][n][day].locked;
       saveCell(city,n,day,cityState[city][n][day].value,cityState[city][n][day].locked).then(()=>{
         renderTable();
