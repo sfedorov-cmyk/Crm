@@ -293,7 +293,9 @@ function renderTable(){
     inp.addEventListener('input',function(){
       cityState[city][+this.dataset.n][this.dataset.day].value=this.value===''?'':+this.value;
       updateRowTotals();
-      saveCell(city,+this.dataset.n,this.dataset.day,this.value,false);
+    });
+    inp.addEventListener('blur',function(){
+      saveCell(city,+this.dataset.n,this.dataset.day,this.value,cityState[city][+this.dataset.n][this.dataset.day].locked);
     });
     inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur();}});
   });
