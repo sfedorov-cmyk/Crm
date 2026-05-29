@@ -302,8 +302,9 @@ function renderTable(){
     btn.addEventListener('click',function(e){
       e.stopPropagation();const n=+this.dataset.n;const day=this.dataset.day;
       cityState[city][n][day].locked=!cityState[city][n][day].locked;
-      saveCell(city,n,day,cityState[city][n][day].value,cityState[city][n][day].locked);
-      renderTable();
+      saveCell(city,n,day,cityState[city][n][day].value,cityState[city][n][day].locked).then(()=>{
+        renderTable();
+      });
     });
   });
 
