@@ -1310,7 +1310,53 @@ async function renderDashMain(from,to){
   const stats={};ALL_R.forEach(r=>{stats[r]={total:0,logistic:0,combined:0,statuses:{}}});
   data.forEach(row=>{if(!stats[row.recruiter])return;stats[row.recruiter].total++;if(['передан в логистику','проверка СБ','вышел в смену'].includes(row.status))stats[row.recruiter].logistic++;if(['передан в логистику','проверка СБ','вышел в смену'].includes(row.status))stats[row.recruiter].combined++;if(row.status&&row.status!=='—')stats[row.recruiter].statuses[row.status]=(stats[row.recruiter].statuses[row.status]||0)+1;});
   const rating=[...ALL_R].sort((a,b)=>stats[b].logistic-stats[a].logistic);const maxL=Math.max(...ALL_R.map(r=>stats[r].logistic),1);
+  // Общие итоги
+  const totalSB = data.filter(r=>r.status==='проверка СБ').length;
+  const totalLog = data.filter(r=>r.status==='передан в логистику').length;
+  const totalSmena = data.filter(r=>r.status==='вышел в смену').length;
+  const totalCombined = totalSB + totalLog;
+
   document.getElementById('dashContent').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--surface);border-radius:16px;padding:16px 20px;box-shadow:var(--sh);border-left:4px solid #15803d">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">📊 Общие итоги</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f0fdf4;border-radius:10px">
+            <span style="font-size:13px;color:#15803d;font-weight:500">Проверка СБ + Логистика</span>
+            <span style="font-size:22px;font-weight:700;color:#15803d">${totalCombined}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#dcfce7;border-radius:10px">
+            <span style="font-size:13px;color:#15803d;font-weight:500">Вышел в смену</span>
+            <span style="font-size:22px;font-weight:700;color:#15803d">${totalSmena}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--bg);border-radius:10px">
+            <span style="font-size:11px;color:var(--muted)">из них: проверка СБ</span>
+            <span style="font-size:14px;font-weight:600;color:var(--muted)">${totalSB}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--bg);border-radius:10px">
+            <span style="font-size:11px;color:var(--muted)">из них: передан в логистику</span>
+            <span style="font-size:14px;font-weight:600;color:var(--muted)">${totalLog}</span>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:16px;padding:16px 20px;box-shadow:var(--sh);border-left:4px solid var(--accent)">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">📈 Сводка</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:10px">
+            <span style="font-size:13px;color:var(--text);font-weight:500">Всего анкет</span>
+            <span style="font-size:22px;font-weight:700;color:var(--text)">${data.length}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:10px">
+            <span style="font-size:13px;color:var(--text);font-weight:500">Конверсия</span>
+            <span style="font-size:22px;font-weight:700;color:var(--accent-dark)">${data.length?Math.round((totalCombined+totalSmena)/data.length*100):0}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:10px">
+            <span style="font-size:13px;color:var(--text);font-weight:500">Итого принято</span>
+            <span style="font-size:22px;font-weight:700;color:var(--accent-dark)">${totalCombined+totalSmena}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Всего анкет: <strong>${data.length}</strong></div>
     <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)">
       <div style="font-size:12px;font-weight:600;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">🏆 Рейтинг — передано в логистику</div>
